@@ -69,3 +69,72 @@ test_prompt = """
 }
 """
 print(make_flashcard_for_topic(test_prompt, "gemma3:27b"))
+
+
+
+def make_flashcard_for_phrase(prompt: str, llm_model: str) -> str:
+    with open('config.json') as f:
+        config_data=json.load(f)
+
+    base_url = config_data["baseUrl"]
+    token = config_data["token"]
+    # Check the key
+
+    if not token:
+        print("No API key was found - please head over to the troubleshooting notebook in this folder to identify & fix!")
+    elif token.strip() != token:
+        print("An API key was found, but it looks like it might have space or tab characters at the start or end - please remove them - see troubleshooting notebook")
+    else:
+        print("API key found and looks good so far!")
+
+    system_prompt = """
+
+
+You are given the following configuration in json format:
+
+{
+  "source_language": "Spanish",
+  "target_language": "English",
+  "source_text": "hola"
+  "num_options": 4 //Number of multiple choice options to return
+}
+, 
+Note the configuration can all be changed by the user.
+
+
+And the user want it to return a response like:
+
+{
+  "source_language": "Spanish",
+  "target_language": "English",
+  "source_text": "Hola",
+  "target_text": "Hello",
+  "options": [
+    "Hi",
+    "Help",
+    "Hole",
+    "Hello"
+  ],  
+}
+"""
+    client = OpenAI(api_key=token, base_url=base_url)
+    response = client.chat.completions.create(
+        model=llm_model,
+        messages=[
+            {"role": "system", "content": "You are a helpful language expert." + system_prompt},
+            {"role": "user", "content": prompt}
+        ]
+    )
+    return response.choices[0].message.content
+
+
+test_prompt_phrase = """
+{
+  "source_language": "Chinsese",
+  "target_language": "English",
+  "source_text": "水至清则无鱼,人至察则无徒",
+  "num_options": 4
+}
+"""
+
+print(make_flashcard_for_phrase(test_prompt_phrase, "gemma3:27b"))
