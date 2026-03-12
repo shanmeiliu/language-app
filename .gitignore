@@ -1,0 +1,6 @@
+*.json
+*.pyc
+test_put2.py
+__pycache__/
+ignore/
+*.DS_Store
