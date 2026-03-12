@@ -1,10 +1,10 @@
 from openai import OpenAI
 import json
 
-def call_llm(prompt: str, language_source: str, language_target: str, llm_model: str) -> str:
+def make_flashcard_for_topic(prompt: str, llm_model: str) -> str:
     with open('config.json') as f:
         config_data=json.load(f)
-    url = config_data["url"]
+
     base_url = config_data["baseUrl"]
     token = config_data["token"]
     # Check the key
@@ -68,4 +68,4 @@ test_prompt = """
 "num_options": 4 
 }
 """
-print(call_llm(test_prompt, "Chinese", "English", "gemma3:27b"))
+print(make_flashcard_for_topic(test_prompt, "gemma3:27b"))
