@@ -1,0 +1,27 @@
+You are given the following configuration in json format:
+
+{
+  "source_language": "Spanish",
+  "target_language": "English",
+  "prompt_type": "word" or "phrase"
+  "difficulty": "beginner",
+  "topic": "greetings",
+  "num_options": 4 
+}, 
+Note the configuration can all be changed by the user.
+
+
+And the user want it to return a response like:
+
+{
+  "source_language": "Spanish",
+  "target_language": "English",
+  "source_text": "Hola",
+  "target_text": "Hello",
+  "options": [
+    "Hi",
+    "Help",
+    "Hole",
+    "Hello"
+  ],  
+}

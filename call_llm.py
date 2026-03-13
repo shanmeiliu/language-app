@@ -1,7 +1,7 @@
 from openai import OpenAI
 import json
 
-def make_flashcard_for_topic(prompt: str, llm_model: str) -> str:
+def make_flashcard_for_topic(topic, difficulty, source_lang, dest_lang, model_name: str) -> str:
     with open('config.json') as f:
         config_data=json.load(f)
 
@@ -16,63 +16,40 @@ def make_flashcard_for_topic(prompt: str, llm_model: str) -> str:
     else:
         print("API key found and looks good so far!")
 
-    system_prompt = """
+    file_path = './prompts/make_flashcard_for_topic.txt'
+    with open(file_path, 'r') as f1:
+        content = f1.read()
+    system_prompt = content
 
 
-You are given the following configuration in json format:
+    test_prompt = f"""
+        {{
+        "source_language": {source_lang},
+        "target_language": {dest_lang},
+        "prompt_type": "phrase",
+        "difficulty": {difficulty},
+        "topic": {topic},
+        "num_options": 4 
+        }}
+        """
 
-{
-  "source_language": "Spanish",
-  "target_language": "English",
-  "prompt_type": "word" or "phrase"
-  "difficulty": "beginner",
-  "topic": "greetings",
-  "num_options": 4 
-}, 
-Note the configuration can all be changed by the user.
-
-
-And the user want it to return a response like:
-
-{
-  "source_language": "Spanish",
-  "target_language": "English",
-  "source_text": "Hola",
-  "target_text": "Hello",
-  "options": [
-    "Hi",
-    "Help",
-    "Hole",
-    "Hello"
-  ],  
-}
-"""
     client = OpenAI(api_key=token, base_url=base_url)
     response = client.chat.completions.create(
-        model=llm_model,
+        model=model_name,
         messages=[
             {"role": "system", "content": "You are a helpful language expert." + system_prompt},
-            {"role": "user", "content": prompt}
+            {"role": "user", "content": test_prompt}
         ]
     )
     return response.choices[0].message.content
 
 
-test_prompt = """
-{
-"source_language": "Chinsese",
-"target_language": "English",
-"prompt_type": "phrase"
-"difficulty": "expert",
-"topic": "刻舟求剑",
-"num_options": 4 
-}
-"""
-print(make_flashcard_for_topic(test_prompt, "gemma3:27b"))
+
+print(make_flashcard_for_topic("卑鄙是卑鄙者的通行证，高尚是高尚者的墓志铭", "expert",  "Chinese", "English","gemma3:27b"))
 
 
 
-def make_flashcard_for_phrase(prompt: str, llm_model: str) -> str:
+def make_flashcard_for_phrase(phrase, source_lang, dest_lang, model_name: str) -> str:
     with open('config.json') as f:
         config_data=json.load(f)
 
@@ -87,54 +64,31 @@ def make_flashcard_for_phrase(prompt: str, llm_model: str) -> str:
     else:
         print("API key found and looks good so far!")
 
-    system_prompt = """
+    file_path = './prompts/make_flashcard_for_phrase.txt'
+    with open(file_path, 'r') as f1:
+        content = f1.read()
+    system_prompt = content
 
-
-You are given the following configuration in json format:
-
-{
-  "source_language": "Spanish",
-  "target_language": "English",
-  "source_text": "hola"
-  "num_options": 4 //Number of multiple choice options to return
-}
-, 
-Note the configuration can all be changed by the user.
-
-
-And the user want it to return a response like:
-
-{
-  "source_language": "Spanish",
-  "target_language": "English",
-  "source_text": "Hola",
-  "target_text": "Hello",
-  "options": [
-    "Hi",
-    "Help",
-    "Hole",
-    "Hello"
-  ],  
-}
-"""
+    test_prompt_phrase = f"""
+        {{
+        "source_language": {source_lang},
+        "target_language": {dest_lang},
+        "source_text": {phrase},
+        "num_options": 4
+        }}
+        """
+   
     client = OpenAI(api_key=token, base_url=base_url)
     response = client.chat.completions.create(
-        model=llm_model,
+        model=model_name,
         messages=[
             {"role": "system", "content": "You are a helpful language expert." + system_prompt},
-            {"role": "user", "content": prompt}
+            {"role": "user", "content": test_prompt_phrase}
         ]
     )
     return response.choices[0].message.content
 
 
-test_prompt_phrase = """
-{
-  "source_language": "Chinsese",
-  "target_language": "English",
-  "source_text": "水至清则无鱼,人至察则无徒",
-  "num_options": 4
-}
-"""
 
-print(make_flashcard_for_phrase(test_prompt_phrase, "gemma3:27b"))
+
+print(make_flashcard_for_phrase("水至清则无鱼,人至察则无徒", "Chinese", "English", "gemma3:27b"))
