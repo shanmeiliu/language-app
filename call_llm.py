@@ -1,7 +1,8 @@
 from openai import OpenAI
 import json
 
-def make_flashcard_for_topic(topic, difficulty, source_lang, dest_lang) -> str:
+
+def llm_common_call(prompt: str, prompt_file: str) -> str:
     with open('config.json') as f:
         config_data=json.load(f)
 
@@ -17,12 +18,23 @@ def make_flashcard_for_topic(topic, difficulty, source_lang, dest_lang) -> str:
     else:
         print("API key found and looks good so far!")
 
-    file_path = './prompts/make_flashcard_for_topic.txt'
+    file_path = prompt_file
     with open(file_path, 'r') as f1:
         content = f1.read()
     system_prompt = content
 
+    client = OpenAI(api_key=token, base_url=base_url)
+    response = client.chat.completions.create(
+        model=llm,
+        messages=[
+            {"role": "system", "content": "You are a helpful language expert." + system_prompt},
+            {"role": "user", "content": prompt}
+        ]
+    )
+    return response.choices[0].message.content
 
+def make_flashcard_for_topic(topic, difficulty, source_lang, dest_lang) -> str:
+    prompt_file = './prompts/make_flashcard_for_topic.txt'
     test_prompt = f"""
         {{
         "source_language": {source_lang},
@@ -34,15 +46,7 @@ def make_flashcard_for_topic(topic, difficulty, source_lang, dest_lang) -> str:
         }}
         """
 
-    client = OpenAI(api_key=token, base_url=base_url)
-    response = client.chat.completions.create(
-        model=llm,
-        messages=[
-            {"role": "system", "content": "You are a helpful language expert." + system_prompt},
-            {"role": "user", "content": test_prompt}
-        ]
-    )
-    return response.choices[0].message.content
+    return llm_common_call(test_prompt, prompt_file)
 
 
 
@@ -51,25 +55,7 @@ print(make_flashcard_for_topic("卑鄙是卑鄙者的通行证，高尚是高尚
 
 
 def make_flashcard_for_phrase(phrase, source_lang, dest_lang) -> str:
-    with open('config.json') as f:
-        config_data=json.load(f)
-
-    base_url = config_data["baseUrl"]
-    token = config_data["token"]
-    llm = config_data["model"]
-    # Check the key
-
-    if not token:
-        print("No API key was found - please head over to the troubleshooting notebook in this folder to identify & fix!")
-    elif token.strip() != token:
-        print("An API key was found, but it looks like it might have space or tab characters at the start or end - please remove them - see troubleshooting notebook")
-    else:
-        print("API key found and looks good so far!")
-
-    file_path = './prompts/make_flashcard_for_phrase.txt'
-    with open(file_path, 'r') as f1:
-        content = f1.read()
-    system_prompt = content
+    prompt_file = './prompts/make_flashcard_for_phrase.txt'
 
     test_prompt_phrase = f"""
         {{
@@ -80,15 +66,8 @@ def make_flashcard_for_phrase(phrase, source_lang, dest_lang) -> str:
         }}
         """
    
-    client = OpenAI(api_key=token, base_url=base_url)
-    response = client.chat.completions.create(
-        model=llm,
-        messages=[
-            {"role": "system", "content": "You are a helpful language expert." + system_prompt},
-            {"role": "user", "content": test_prompt_phrase}
-        ]
-    )
-    return response.choices[0].message.content
+    return llm_common_call(test_prompt_phrase, prompt_file)
+   
 
 
 
