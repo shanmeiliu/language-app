@@ -33,7 +33,7 @@ def llm_common_call(prompt: str, prompt_file: str) -> str:
     )
     return response.choices[0].message.content
 
-def make_flashcard_for_topic(topic, difficulty, source_lang, dest_lang) -> str:
+def make_flashcard_for_topic(topic, difficulty, source_lang, dest_lang, num_options) -> str:
     prompt_file = './prompts/make_flashcard_for_topic.txt'
     test_prompt = f"""
         {{
@@ -42,7 +42,7 @@ def make_flashcard_for_topic(topic, difficulty, source_lang, dest_lang) -> str:
         "prompt_type": "phrase",
         "difficulty": {difficulty},
         "topic": {topic},
-        "num_options": 4 
+        "num_options": {num_options}
         }}
         """
 
@@ -50,11 +50,11 @@ def make_flashcard_for_topic(topic, difficulty, source_lang, dest_lang) -> str:
 
 
 
-print(make_flashcard_for_topic("卑鄙是卑鄙者的通行证，高尚是高尚者的墓志铭", "expert",  "Chinese", "English"))
+print(make_flashcard_for_topic("卑鄙是卑鄙者的通行证，高尚是高尚者的墓志铭", "expert",  "Chinese", "English", 8))
 
 
 
-def make_flashcard_for_phrase(phrase, source_lang, dest_lang) -> str:
+def make_flashcard_for_phrase(phrase, source_lang, dest_lang, num_options) -> str:
     prompt_file = './prompts/make_flashcard_for_phrase.txt'
 
     test_prompt_phrase = f"""
@@ -62,7 +62,7 @@ def make_flashcard_for_phrase(phrase, source_lang, dest_lang) -> str:
         "source_language": {source_lang},
         "target_language": {dest_lang},
         "source_text": {phrase},
-        "num_options": 4
+        "num_options": {num_options}
         }}
         """
    
@@ -72,4 +72,4 @@ def make_flashcard_for_phrase(phrase, source_lang, dest_lang) -> str:
 
 
 
-print(make_flashcard_for_phrase("水至清则无鱼,人至察则无徒", "Chinese", "English"))
+print(make_flashcard_for_phrase("水至清则无鱼,人至察则无徒", "Chinese", "English", 8 ))
