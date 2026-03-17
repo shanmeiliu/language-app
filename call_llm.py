@@ -33,7 +33,7 @@ def llm_common_call(prompt: str, prompt_file: str) -> str:
     )
     return response.choices[0].message.content
 
-def make_flashcard_for_topic(topic, difficulty, source_lang, dest_lang, num_options) -> str:
+def make_flashcard_for_topic(topic, difficulty, source_lang, dest_lang, num_options, num) -> str:
     prompt_file = './prompts/make_flashcard_for_topic.txt'
     test_prompt = f"""
         {{
@@ -43,6 +43,7 @@ def make_flashcard_for_topic(topic, difficulty, source_lang, dest_lang, num_opti
         "difficulty": {difficulty},
         "topic": {topic},
         "num_options": {num_options}
+        "num": {num}
         }}
         """
 
@@ -50,7 +51,7 @@ def make_flashcard_for_topic(topic, difficulty, source_lang, dest_lang, num_opti
 
 
 
-print(make_flashcard_for_topic("卑鄙是卑鄙者的通行证，高尚是高尚者的墓志铭", "expert",  "Chinese", "English", 8))
+print(make_flashcard_for_topic("卑鄙是卑鄙者的通行证，高尚是高尚者的墓志铭", "expert",  "Chinese", "English", 4, 2))
 
 
 

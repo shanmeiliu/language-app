@@ -7,13 +7,14 @@ You are given the following configuration in json format:
   "difficulty": "beginner",
   "topic": "greetings",
   "num_options": 4 
+  "num": 2
 }, 
-Note the configuration can all be changed by the user.
+Note the configuration can all be changed by the user. "num" determines how many responses the user wants.
 
 
-And the user want it to return a response like:
+And the user want it to return "num" responses like:
 
-{
+[{
   "source_language": "Spanish",
   "target_language": "English",
   "source_text": "Hola",
@@ -23,5 +24,20 @@ And the user want it to return a response like:
     "Help",
     "Hole",
     "Hello"
-  ],  
+  ],
 }
+  {
+  "source_language": "Spanish",
+  "target_language": "English",
+  "source_text": "Gato",
+  "target_text": "cat",
+  "options": [
+    "kitten",
+    "cheetah",
+    "lion",
+    "tiger"
+  ],    
+}
+
+
+]
