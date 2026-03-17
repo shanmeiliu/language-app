@@ -55,7 +55,7 @@ print(make_flashcard_for_topic("卑鄙是卑鄙者的通行证，高尚是高尚
 
 
 
-def make_flashcard_for_phrase(phrase, source_lang, dest_lang, num_options) -> str:
+def make_flashcard_for_phrase(phrase, source_lang, dest_lang, num_options, text_type) -> str:
     prompt_file = './prompts/make_flashcard_for_phrase.txt'
 
     test_prompt_phrase = f"""
@@ -63,7 +63,8 @@ def make_flashcard_for_phrase(phrase, source_lang, dest_lang, num_options) -> st
         "source_language": {source_lang},
         "target_language": {dest_lang},
         "source_text": {phrase},
-        "num_options": {num_options}
+        "num_options": {num_options},
+        "text_type": {text_type}
         }}
         """
    
@@ -73,4 +74,4 @@ def make_flashcard_for_phrase(phrase, source_lang, dest_lang, num_options) -> st
 
 
 
-print(make_flashcard_for_phrase("水至清则无鱼,人至察则无徒", "Chinese", "English", 8 ))
+print(make_flashcard_for_phrase("水至清则无鱼,人至察则无徒", "Chinese", "English", 8, None ))
