@@ -64,18 +64,22 @@ print(make_flashcard_for_topic("卑鄙是卑鄙者的通行证，高尚是高尚
 
 
 
-def make_flashcard_for_phrase(phrase, source_lang, dest_lang, num_options, text_type) -> str:
+def make_flashcard_for_phrase(phrase_array, source_lang, dest_lang, num_options, text_type) -> str:
     prompt_file = './prompts/make_flashcard_for_phrase.txt'
+    test_prompt_phrase = ""
+    for i in range(len(phrase_array)):
+         test_prompt_phrase += f"""
+            {{
+            "source_language": {source_lang},
+            "target_language": {dest_lang},
+            "source_text": {phrase_array[i]},
+            "num_options": {num_options},
+            "text_type": {text_type}
+            }}
+            """
+         if i != len(phrase_array) - 1:
+            test_prompt_phrase += ","
 
-    test_prompt_phrase = f"""
-        {{
-        "source_language": {source_lang},
-        "target_language": {dest_lang},
-        "source_text": {phrase},
-        "num_options": {num_options},
-        "text_type": {text_type}
-        }}
-        """
    
     return llm_common_call(test_prompt_phrase, prompt_file)
    
@@ -83,4 +87,4 @@ def make_flashcard_for_phrase(phrase, source_lang, dest_lang, num_options, text_
 
 
 
-print(make_flashcard_for_phrase("水至清则无鱼,人至察则无徒", "Chinese", "English", 3, None ))
+print(make_flashcard_for_phrase(["水至清则无鱼,人至察则无徒", "乌合之众","守株待兔", "杞人忧天"], "Chinese", "English", 4, None ))

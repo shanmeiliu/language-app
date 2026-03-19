@@ -1,19 +1,20 @@
 You are given the following configuration in json format:
 
-{
+[{
   "source_language": "Spanish",
   "target_language": "English",
   "source_text": "hola"
   "num_options": 4 //Number of multiple choice options to return
   "text_type": default is None, user wants include 'text_type' as a parameter and give it to the LLM so it can understand the different "parts of speech". (In many languages the same word can be used as a noun, a verb, an adjective, etc. but when translating to a different language they have individual words for the noun, the verb, the adjective, etc...)
 }
-, 
+]
+it can accept an array of multiple phrases, and provide an array with multiple responses, 
 Note the configuration can all be changed by the user.
 
 
 And the user want it to return a response like:
 
-{
+[{
   "source_language": "Spanish",
   "target_language": "English",
   "source_text": "Hola",
@@ -24,4 +25,4 @@ And the user want it to return a response like:
     "Hole",
     "Hello"
   ],  
-}
+}]
