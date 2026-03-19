@@ -1,7 +1,16 @@
 from openai import OpenAI
 import json
+import logging
 
-
+logging.basicConfig(
+    level=logging.ERROR, # Set the minimum level to log (DEBUG and above)
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(), # Output to console
+        #logging.FileHandler("app.log") # Output to a file
+    ]
+)
+logger = logging.getLogger(__name__) 
 def llm_common_call(prompt: str, prompt_file: str) -> str:
     with open('config.json') as f:
         config_data=json.load(f)
@@ -12,11 +21,11 @@ def llm_common_call(prompt: str, prompt_file: str) -> str:
     # Check the key
 
     if not token:
-        print("No API key was found - please head over to the troubleshooting notebook in this folder to identify & fix!")
+        logger.error("No API key was found - please head over to the troubleshooting notebook in this folder to identify & fix!")
     elif token.strip() != token:
-        print("An API key was found, but it looks like it might have space or tab characters at the start or end - please remove them - see troubleshooting notebook")
+        logger.warning("An API key was found, but it looks like it might have space or tab characters at the start or end - please remove them - see troubleshooting notebook")
     else:
-        print("API key found and looks good so far!")
+        logger.info("API key found and looks good so far!")
 
     file_path = prompt_file
     with open(file_path, 'r') as f1:
@@ -74,4 +83,4 @@ def make_flashcard_for_phrase(phrase, source_lang, dest_lang, num_options, text_
 
 
 
-print(make_flashcard_for_phrase("水至清则无鱼,人至察则无徒", "Chinese", "English", 8, None ))
+print(make_flashcard_for_phrase("水至清则无鱼,人至察则无徒", "Chinese", "English", 3, None ))
