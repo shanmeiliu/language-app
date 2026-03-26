@@ -1,6 +1,40 @@
 from openai import OpenAI
+from database.db_helper import db_connection
 import json
 import logging
+
+
+with open('config.json') as f:
+    config_data=json.load(f)
+
+    base_url = config_data["baseUrl"]
+    token = config_data["token"]
+    llm = config_data["model"]
+    db_connection_string = config_data["db_connection_string"]
+# Open a cursor to perform database operations
+with db_connection(db_connection_string) as ocur:
+    ocur.execute("""
+    CREATE TABLE IF NOT EXISTS public.prompt (
+    prompt_id SERIAL PRIMARY KEY,
+    source_lang VARCHAR(20) NOT NULL,
+    target_lang VARCHAR(20) NOT NULL,
+    source_text TEXT NOT NULL,
+    target_text TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.alternate (
+    alternate_id SERIAL PRIMARY KEY,
+    prompt_id INT NOT NULL,
+    option_text TEXT NOT NULL,
+    CONSTRAINT fk_prompt
+        FOREIGN KEY(prompt_id)
+        REFERENCES prompt(prompt_id)
+        ON DELETE CASCADE
+);
+
+
+
+    """)
 
 logging.basicConfig(
     level=logging.ERROR, # Set the minimum level to log (DEBUG and above)
