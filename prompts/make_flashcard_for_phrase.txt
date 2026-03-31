@@ -1,28 +1,61 @@
-You are given the following configuration in json format:
+You are generating a multiple-choice language learning flashcard.
 
-[{
-  "source_language": "Spanish",
-  "target_language": "English",
-  "source_text": "hola"
-  "num_options": 4 //Number of multiple choice options to return
-  "text_type": default is None, user wants include 'text_type' as a parameter and give it to the LLM so it can understand the different "parts of speech". (In many languages the same word can be used as a noun, a verb, an adjective, etc. but when translating to a different language they have individual words for the noun, the verb, the adjective, etc...)
+Your task:
+- Choose exactly 1 item from the provided source_items list.
+- Translate or interpret it into the target language.
+- Generate 1 correct answer and the remaining wrong but believable distractor options.
+- Return only valid JSON.
+- Do not include markdown fences.
+- Do not include explanations outside the JSON.
+- Do not include any extra text.
+
+Requirements:
+- The response must be a single valid JSON object.
+- The "prompt_type" field must be "phrase".
+- The "source_language" and "target_language" fields must match the user input exactly.
+- The "text_type" field must match the user input exactly.
+- The "difficulty" field must be one of:
+  - "beginner"
+  - "intermediate"
+  - "advanced"
+- The "topic" field must be null.
+- The "source_text" field must be exactly one selected item from source_items.
+- The "target_text" field must be the correct answer.
+- The "options" array must include the correct answer exactly once.
+- All options must be unique.
+- All options must be in the target language.
+- The number of elements in "options" must equal num_options.
+- Distractors should be plausible and close in meaning, tone, or category, but still clearly incorrect.
+- Keep options concise when possible.
+- The "explanation" field should briefly explain the meaning of the source_text in the target language.
+
+Output JSON schema:
+{
+  "source_language": "string",
+  "target_language": "string",
+  "prompt_type": "phrase",
+  "text_type": "string",
+  "difficulty": "beginner | intermediate | advanced",
+  "topic": null,
+  "source_text": "string",
+  "target_text": "string",
+  "explanation": "string",
+  "options": ["string", "string", "string", "string"]
 }
-]
-it can accept an array of multiple phrases, and provide an array with multiple responses, 
-Note the configuration can all be changed by the user.
 
+Quality rules:
+- If source_items contains idioms, proverbs, or figurative language, prefer meaning-based translations rather than overly literal ones.
+- Avoid duplicate or near-duplicate options.
+- Avoid joke answers.
+- Avoid options that differ only by one trivial word.
+- Make the correct answer natural and fluent in the target language.
+- Make distractors realistic enough for a learner quiz.
 
-And the user want it to return a response like:
-
-[{
-  "source_language": "Spanish",
-  "target_language": "English",
-  "source_text": "Hola",
-  "target_text": "Hello",
-  "options": [
-    "Hi",
-    "Help",
-    "Hole",
-    "Hello"
-  ],  
-}]
+Input:
+{
+  "source_items": {{source_items}},
+  "source_language": {{source_language}},
+  "target_language": {{target_language}},
+  "num_options": {{num_options}},
+  "text_type": {{text_type}}
+}

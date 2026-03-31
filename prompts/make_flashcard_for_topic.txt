@@ -1,43 +1,64 @@
-You are given the following configuration in json format:
+You are generating a multiple-choice language learning flashcard.
 
+Your task:
+- Generate exactly 1 source-language expression related to the given topic.
+- Then provide the correct target-language meaning or translation.
+- Generate multiple-choice options with exactly 1 correct answer and the remaining wrong but believable distractor options.
+- Return only valid JSON.
+- Do not include markdown fences.
+- Do not include explanations outside the JSON.
+- Do not include any extra text.
+
+Requirements:
+- The response must be a single valid JSON object.
+- The "prompt_type" field must be "topic".
+- The "source_language" and "target_language" fields must match the user input exactly.
+- The "text_type" field must match the user input exactly.
+- The "difficulty" field must match the user input exactly if it is one of:
+  - "beginner"
+  - "intermediate"
+  - "advanced"
+  Otherwise, choose the closest of those three.
+- The "topic" field must match the user input exactly.
+- The "source_text" field must be a source-language word, phrase, idiom, proverb, or sentence appropriate to the requested topic and text_type.
+- The "target_text" field must be the correct answer.
+- The "options" array must include the correct answer exactly once.
+- All options must be unique.
+- All options must be in the target language.
+- The number of elements in "options" must equal num_options.
+- The "explanation" field should briefly explain the meaning and relevance of the source_text.
+
+Output JSON schema:
 {
-  "source_language": "Spanish",
-  "target_language": "English",
-  "prompt_type": "word" or "phrase"
-  "difficulty": "beginner",
-  "topic": "greetings",
-  "num_options": 4 
-  "num": 2
-}, 
-Note the configuration can all be changed by the user. "num" determines how many responses the user wants.
-
-
-And the user want it to return "num" responses like:
-
-[{
-  "source_language": "Spanish",
-  "target_language": "English",
-  "source_text": "Hola",
-  "target_text": "Hello",
-  "options": [
-    "Hi",
-    "Help",
-    "Hole",
-    "Hello"
-  ],
-}
-  {
-  "source_language": "Spanish",
-  "target_language": "English",
-  "source_text": "Gato",
-  "target_text": "cat",
-  "options": [
-    "kitten",
-    "cheetah",
-    "lion",
-    "tiger"
-  ],    
+  "source_language": "string",
+  "target_language": "string",
+  "prompt_type": "topic",
+  "text_type": "string",
+  "difficulty": "beginner | intermediate | advanced",
+  "topic": "string",
+  "source_text": "string",
+  "target_text": "string",
+  "explanation": "string",
+  "options": ["string", "string", "string", "string"]
 }
 
+Quality rules:
+- The generated source_text must naturally fit the requested topic.
+- The generated source_text must match the requested difficulty.
+- Prefer authentic, natural examples over textbook-sounding ones.
+- If text_type is "idiom" or "proverb", generate a real expression where possible.
+- Avoid obscure expressions unless difficulty is "advanced".
+- Avoid duplicate or near-duplicate options.
+- Avoid joke answers.
+- Make the correct answer natural and fluent in the target language.
+- Make distractors realistic enough for a learner quiz.
 
-]
+Input:
+{
+  "source_language": {{source_language}},
+  "target_language": {{target_language}},
+  "num_options": {{num_options}},
+  "topic": {{topic}},
+  "difficulty": {{difficulty}},
+  "text_type": {{text_type}}
+}
