@@ -102,6 +102,138 @@ def save_flashcard(
 
     return flashcard_id
 
+def get_flashcard_by_id(db_connection_string: str, flashcard_id: str) -> dict | None:
+    with db_connection(db_connection_string) as cur:
+        cur.execute(
+            """
+            SELECT
+                flashcard_id,
+                source_lang,
+                target_lang,
+                prompt_type,
+                text_type,
+                difficulty,
+                topic,
+                source_text,
+                target_text,
+                explanation,
+                created_at
+            FROM public.flashcard
+            WHERE flashcard_id = %s
+            """,
+            (flashcard_id,),
+        )
+        row = cur.fetchone()
+
+        if not row:
+            return None
+
+        cur.execute(
+            """
+            SELECT option_text, is_correct, option_order
+            FROM public.flashcard_option
+            WHERE flashcard_id = %s
+            ORDER BY option_order ASC
+            """,
+            (flashcard_id,),
+        )
+        options = cur.fetchall()
+
+    return {
+        "flashcard_id": row[0],
+        "source_language": row[1],
+        "target_language": row[2],
+        "prompt_type": row[3],
+        "text_type": row[4],
+        "difficulty": row[5],
+        "topic": row[6],
+        "source_text": row[7],
+        "target_text": row[8],
+        "explanation": row[9],
+        "created_at": row[10].isoformat() if row[10] else None,
+        "options": [
+            {
+                "text": opt[0],
+                "is_correct": opt[1],
+                "order": opt[2],
+            }
+            for opt in options
+        ],
+    }
+
+def find_existing_phrase_flashcard(
+    db_connection_string: str,
+    source_lang: str,
+    target_lang: str,
+    text_type,
+    source_items: list[str],
+):
+    with db_connection(db_connection_string) as cur:
+        cur.execute(
+            """
+            SELECT flashcard_id
+            FROM public.flashcard
+            WHERE source_lang = %s
+              AND target_lang = %s
+              AND prompt_type = 'phrase'
+              AND text_type IS NOT DISTINCT FROM %s
+              AND source_text = ANY(%s)
+            ORDER BY created_at DESC
+            LIMIT 1
+            """,
+            (source_lang, target_lang, text_type, source_items),
+        )
+        row = cur.fetchone()
+
+    if not row:
+        return None
+
+    return get_flashcard_by_id(db_connection_string, row[0])
+
+def find_existing_topic_flashcard(
+    db_connection_string: str,
+    source_lang: str,
+    target_lang: str,
+    topic: str,
+    difficulty: str,
+    text_type,
+):
+    with db_connection(db_connection_string) as cur:
+        cur.execute(
+            """
+            SELECT flashcard_id
+            FROM public.flashcard
+            WHERE source_lang = %s
+              AND target_lang = %s
+              AND prompt_type = 'topic'
+              AND topic = %s
+              AND difficulty = %s
+              AND text_type IS NOT DISTINCT FROM %s
+            ORDER BY created_at DESC
+            LIMIT 1
+            """,
+            (source_lang, target_lang, topic, difficulty, text_type),
+        )
+        row = cur.fetchone()
+
+    if not row:
+        return None
+
+    return get_flashcard_by_id(db_connection_string, row[0])
+
+def flashcard_record_to_response(record: dict) -> dict:
+    return {
+        "source_language": record["source_language"],
+        "target_language": record["target_language"],
+        "prompt_type": record["prompt_type"],
+        "text_type": record["text_type"],
+        "difficulty": record["difficulty"],
+        "topic": record["topic"],
+        "source_text": record["source_text"],
+        "target_text": record["target_text"],
+        "explanation": record["explanation"],
+        "options": [opt["text"] for opt in record["options"]],
+    }
 def ensure_schema(db_connection_string: str):
     with db_connection(db_connection_string) as cur:
         cur.execute("""
@@ -191,6 +323,117 @@ def make_flashcard_for_topic(topic, difficulty, source_lang, dest_lang, num_opti
     test_prompt = json.dumps(payload, ensure_ascii=False)
     return llm_common_call(test_prompt, prompt_file)
 
+def get_or_create_topic_flashcard(
+    db_connection_string: str,
+    model_name: str,
+    topic,
+    difficulty,
+    source_lang,
+    dest_lang,
+    num_options,
+    num,
+    text_type="phrase",
+) -> dict:
+    existing = find_existing_topic_flashcard(
+        db_connection_string=db_connection_string,
+        source_lang=source_lang,
+        target_lang=dest_lang,
+        topic=topic,
+        difficulty=difficulty,
+        text_type=text_type,
+    )
+
+    if existing:
+        print("Topic flashcard found in DB cache.")
+        return flashcard_record_to_response(existing)
+
+    print("Topic flashcard not found in DB. Calling LLM...")
+
+    raw_response = make_flashcard_for_topic(
+        topic=topic,
+        difficulty=difficulty,
+        source_lang=source_lang,
+        dest_lang=dest_lang,
+        num_options=num_options,
+        num=num,
+        text_type=text_type,
+    )
+
+    sanitized_response = sanitize_llm_json_response(raw_response)
+    card_data = json.loads(sanitized_response)
+
+    flashcard_id = save_flashcard(
+        db_connection_string=db_connection_string,
+        card_data=card_data,
+        model_name=model_name,
+        prompt_template="./prompts/make_flashcard_for_topic.txt",
+        raw_request={
+            "source_language": source_lang,
+            "target_language": dest_lang,
+            "difficulty": difficulty,
+            "topic": topic,
+            "num_options": num_options,
+            "num": num,
+            "text_type": text_type,
+        },
+        raw_response=sanitized_response,
+    )
+
+    saved = get_flashcard_by_id(db_connection_string, flashcard_id)
+    return flashcard_record_to_response(saved)
+
+def get_or_create_phrase_flashcard(
+    db_connection_string: str,
+    model_name: str,
+    phrase_array,
+    source_lang,
+    dest_lang,
+    num_options,
+    text_type,
+) -> dict:
+    existing = find_existing_phrase_flashcard(
+        db_connection_string=db_connection_string,
+        source_lang=source_lang,
+        target_lang=dest_lang,
+        text_type=text_type,
+        source_items=phrase_array,
+    )
+
+    if existing:
+        print("Phrase flashcard found in DB cache.")
+        return flashcard_record_to_response(existing)
+
+    print("Phrase flashcard not found in DB. Calling LLM...")
+
+    raw_response = make_flashcard_for_phrase(
+        phrase_array=phrase_array,
+        source_lang=source_lang,
+        dest_lang=dest_lang,
+        num_options=num_options,
+        text_type=text_type,
+    )
+
+    sanitized_response = sanitize_llm_json_response(raw_response)
+    card_data = json.loads(sanitized_response)
+
+    flashcard_id = save_flashcard(
+        db_connection_string=db_connection_string,
+        card_data=card_data,
+        model_name=model_name,
+        prompt_template="./prompts/make_flashcard_for_phrase.txt",
+        raw_request={
+            "source_items": phrase_array,
+            "source_language": source_lang,
+            "target_language": dest_lang,
+            "num_options": num_options,
+            "text_type": text_type,
+        },
+        raw_response=sanitized_response,
+    )
+
+    saved = get_flashcard_by_id(db_connection_string, flashcard_id)
+    return flashcard_record_to_response(saved)
+
 
 def make_flashcard_for_phrase(phrase_array, source_lang, dest_lang, num_options, text_type) -> str:
     prompt_file = './prompts/make_flashcard_for_phrase.txt'
@@ -238,84 +481,46 @@ def main():
 
     ensure_schema(db_connection_string)
 
-    # Example 1: topic card
-    topic_request = {
-        "source_language": "Chinese",
-        "target_language": "English",
-        "difficulty": "expert",
-        "topic": "卑鄙是卑鄙者的通行证，高尚是高尚者的墓志铭",
-        "num_options": 4,
-        "num": 2,
-        "text_type": "phrase"
-    }
+    try:
+        topic_result = get_or_create_topic_flashcard(
+            db_connection_string=db_connection_string,
+            model_name=llm,
+            topic="classical literature",
+            difficulty="advanced",
+            source_lang="Chinese",
+            dest_lang="English",
+            num_options=4,
+            num=1,
+            text_type="phrase",
+        )
 
-    raw_topic_response = make_flashcard_for_topic(
-        topic=topic_request["topic"],
-        difficulty=topic_request["difficulty"],
-        source_lang=topic_request["source_language"],
-        dest_lang=topic_request["target_language"],
-        num_options=topic_request["num_options"],
-        num=topic_request["num"]
-    )
-
-    print(raw_topic_response)
+        print("Topic result:")
+        print(json.dumps(topic_result, ensure_ascii=False, indent=2))
+    except json.JSONDecodeError as e:
+        logger.error(f"Topic response was not valid JSON; not saved to DB. Error: {e}")
+    except Exception as e:
+        logger.error(f"Failed to get or create topic flashcard: {e}")
 
     try:
-        sanitized_topic_response = sanitize_llm_json_response(raw_topic_response)
-        print(sanitized_topic_response)
-
-        topic_card = json.loads(sanitized_topic_response)
-        topic_flashcard_id = save_flashcard(
+        phrase_result = get_or_create_phrase_flashcard(
             db_connection_string=db_connection_string,
-            card_data=topic_card,
             model_name=llm,
-            prompt_template="./prompts/make_flashcard_for_topic.txt",
-            raw_request=topic_request,
-            raw_response=sanitized_topic_response,
+            phrase_array=["水至清则无鱼,人至察则无徒", "乌合之众", "守株待兔", "杞人忧天"],
+            source_lang="Chinese",
+            dest_lang="English",
+            num_options=4,
+            text_type="idiom",
         )
-        print(f"Saved topic flashcard: {topic_flashcard_id}")
-    except json.JSONDecodeError:
-        logger.error("Topic response was not valid JSON; not saved to DB.")
+
+        print("Phrase result:")
+        print(json.dumps(phrase_result, ensure_ascii=False, indent=2))
+    except json.JSONDecodeError as e:
+        logger.error(f"Phrase response was not valid JSON; not saved to DB. Error: {e}")
     except Exception as e:
-        logger.error(f"Failed to save topic flashcard: {e}")
+        logger.error(f"Failed to get or create phrase flashcard: {e}")
 
-    # Example 2: phrase card
-    phrase_request = {
-        "source_items": ["水至清则无鱼,人至察则无徒", "乌合之众", "守株待兔", "杞人忧天"],
-        "source_language": "Chinese",
-        "target_language": "English",
-        "num_options": 4,
-        "text_type": "idiom"
-    }
 
-    raw_phrase_response = make_flashcard_for_phrase(
-        phrase_array=phrase_request["source_items"],
-        source_lang=phrase_request["source_language"],
-        dest_lang=phrase_request["target_language"],
-        num_options=phrase_request["num_options"],
-        text_type=phrase_request["text_type"]
-    )
 
-    print(raw_phrase_response)
-
-    try:
-        sanitized_phrase_response = sanitize_llm_json_response(raw_phrase_response)
-        print(sanitized_phrase_response)
-
-        phrase_card = json.loads(sanitized_phrase_response)
-        phrase_flashcard_id = save_flashcard(
-            db_connection_string=db_connection_string,
-            card_data=phrase_card,
-            model_name=llm,
-            prompt_template="./prompts/make_flashcard_for_phrase.txt",
-            raw_request=phrase_request,
-            raw_response=sanitized_phrase_response,
-        )
-        print(f"Saved phrase flashcard: {phrase_flashcard_id}")
-    except json.JSONDecodeError:
-        logger.error("Phrase response was not valid JSON; not saved to DB.")
-    except Exception as e:
-        logger.error(f"Failed to save phrase flashcard: {e}")
 
 
 if __name__ == "__main__":

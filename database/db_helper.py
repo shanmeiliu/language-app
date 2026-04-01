@@ -1,9 +1,9 @@
-import psycopg2
+import psycopg
 from contextlib import contextmanager
 
 @contextmanager
 def db_connection(db_connection_string):
-    conn = psycopg2.connect(db_connection_string)
+    conn = psycopg.connect(db_connection_string)
     try:
         conn.autocommit = False
         cur = conn.cursor()
