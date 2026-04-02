@@ -1,7 +1,3 @@
-Here’s your **updated README.md** with `psycopg (v3)` correctly reflected:
-
----
-
 # Language Learning Flashcard App (LLM + Postgres)
 
 A Python-based language learning tool that generates multiple-choice flashcards using an LLM and stores them in PostgreSQL with a cache-first retrieval strategy.
